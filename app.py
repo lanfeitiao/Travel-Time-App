@@ -1,15 +1,45 @@
 import streamlit as st
 import pydeck as pdk
 import requests
+import os
+from dotenv import load_dotenv
+import openai
 
 st.title('Travel Time Web Application')
 
 # Fuction to fetch reachable destinations 
-# TO DO: replace it with actual API
+
+# Load environment variables from .env file
+load_dotenv()
+
+# Access the API key 
+openai.api_key = os.getenv('OPENAI_API_KEY')
+
+
 def fetch_destinations(start_point, travel_time):
-    # This should be replaced with a call to a real API
-    # Returning a fixed location for demonstration purposes
-    return [{'latitude': 52.3676, 'longitude': 4.9041}]
+    #client = OpenAI()
+    prompt = f"What are some destinations within {travel_time} minutes of travel by public transport from {start_point}?"
+
+    try:
+        response = openai.chat.completions.create(
+            model='gpt-3.5-turbo',
+            messages=[
+                { "role": "system", "content": "You are a travel guide." },
+                { "role": "user", "content": prompt }
+            ]
+        )
+
+        # Extracting the response text
+        destinations_text =  response.choices[0].message.content
+        print(destinations_text) # For debugging, to view the raw response 
+
+        # Assuming the response lists destinations seperated by commas
+        destination_names = destinations_text.split(', ')
+        return destination_names
+    except Exception as e:
+        print(f"An error occured: {e}")
+        return []
+
 
 # Set up the sidebar for user inputs
 st.sidebar.header('Travel Time Settings')
