@@ -2,7 +2,6 @@ import streamlit as st
 import pydeck as pdk
 import requests
 import os
-from dotenv import load_dotenv
 import openai
 
 st.title('Travel Time Web Application')
@@ -10,7 +9,8 @@ st.title('Travel Time Web Application')
 # Fuction to fetch reachable destinations 
 
 # Load environment variables from .env file
-load_dotenv()
+# from dotenv import load_dotenv
+# load_dotenv()
 
 # Access the API key 
 openai.api_key = os.getenv('OPENAI_API_KEY')
