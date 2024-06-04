@@ -9,8 +9,8 @@ st.title('Travel Time Web Application')
 # Fuction to fetch reachable destinations 
 
 # Load environment variables from .env file
-# from dotenv import load_dotenv
-# load_dotenv()
+from dotenv import load_dotenv
+load_dotenv()
 
 # Access the API key 
 openai.api_key = os.getenv('OPENAI_API_KEY')
