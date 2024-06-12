@@ -15,23 +15,55 @@ st.title('Travel Time Web Application')
 # Load environment variables from .env file
 load_dotenv()
 
+# Helper function to get generated outputs from OpenAI model 
+client = OpenAI()
+
+def get_completion(prompt, model='gpt-3.5-turbo'):
+    messages = [{ "role": "user", "content": prompt }]
+    response = client.chat.completions.create(
+            model=model,
+            response_format={ "type": "json_object" },
+            messages=messages,
+            temperature=0,
+        )
+    return response.choices[0].message.content
+    # Format your response as a JSON object with "name", "things_to_do", \
+    # and "coordinates" as the keys.\
+    # If the information isn't present, use "unknown" as the value.
+    # Format the coordinates value as an array of longtitude and latitude.
+    # Format the things_to_do value as an array.
+
 # Fuction to fetch reachable destinations 
-def fetch_destinations(start_point, travel_time):
-    client = OpenAI()
-    prompt = f"What are some destinations (towns, cities) within {travel_time} minutes of travel by public transport from {start_point}? Please include their coordinates as well."
+def fetch_destinations(start_point, travel_time, child_age):
+    prompt = f"""
+    Your task is to generate a list of family-friendly destinations (towns and cities)\
+    and things to do within {travel_time} minutes of travel by public transport\
+    from {start_point}. And they are recommended for a family trip with\ 
+    {child_age} years old child or children.
+
+    Output format as follows: 
+    JSON Template:
+    {{
+        "destinations": [
+            {{
+                "name": "Destination 1",
+                "longitude": longitude , 
+                "latitude": latitude,
+                "things_to_do": "Activity 1, Activity 2, Activity 3"
+            }},
+            {{
+                "name": "Destination 2",
+                "longitude": longitude , 
+                "latitude": latitude,
+                "things_to_do": "Activity 1, Activity 2, Activity 3"
+            }},
+            ...
+        ]
+    }}
+    """
 
     try:
-        response = client.chat.completions.create(
-            model='gpt-3.5-turbo',
-            response_format={ "type": "json_object" },
-            messages=[
-                { "role": "system", "content": "You are a travel guide designed to output JSON." },
-                { "role": "user", "content": prompt }
-            ]
-        )
-
-        # Extracting the response text
-        destinations_json =  response.choices[0].message.content
+        destinations_json = get_completion(prompt)
         print(destinations_json) # For debugging, to view the raw response 
 
         # Parsing the JSON response 
@@ -40,7 +72,9 @@ def fetch_destinations(start_point, travel_time):
         # Extracting names and coordinates from the parsed JSON
         destination_info = [{
             'name' : dest['name'],
-            'coordinates': [dest['coordinates']['longitude'],dest['coordinates']['latitude']]
+            'lon': dest['longitude'],
+            'lat': dest['latitude'],
+            'things_to_do': dest['things_to_do']
         } for dest in destinations_data['destinations']]
         print(destination_info)
         return destination_info
@@ -52,6 +86,7 @@ def fetch_destinations(start_point, travel_time):
 st.sidebar.header('Travel Time Settings')
 starting_point = st.sidebar.text_input('Enter starting point', 'Amsterdam')
 travel_time = st.sidebar.slider('Select travel time (minutes)', min_value=5, max_value=120, value=30)
+child_age = st.sidebar.slider('Select child\'s age', min_value=1, max_value=18, value=5)
 
 # # Sample destinations_info data
 # destinations_info = [
@@ -60,12 +95,15 @@ travel_time = st.sidebar.slider('Select travel time (minutes)', min_value=5, max
 # ]
 
 # API call to get destinations
-destinations_info = fetch_destinations(starting_point, travel_time)
+destinations_info = fetch_destinations(starting_point, travel_time, child_age)
 
 # Display destinations in the sidebar 
-st.sidebar.header(f'Destinations within {travel_time} minutes from {starting_point}: ')
+st.subheader(f"""
+             Destinations and Things to Do within {travel_time} minutes\
+             from {starting_point} for a {child_age} year old:
+             """)
 for destination in destinations_info:
-    st.sidebar.write(f"{destination['name']} at coordinates {destination['coordinates']}")
+    st.write(f"**{destination['name']}**: {destination['things_to_do']}")
 
 # Setting up the map
 INITIAL_VIEW_STATE = pdk.ViewState(
@@ -75,20 +113,13 @@ INITIAL_VIEW_STATE = pdk.ViewState(
     pitch=50
 )
 
-# RGBA value generated in Javascript by deck.gl's Javascript expression parser
-GET_COLOR_JS = [
-    "255 * (1 - (start[2] / 10000) * 2)",
-    "128 * (start[2] / 10000)",
-    "255 * (start[2] / 10000)",
-    "255 * (1 - (start[2] / 10000))",
-]
 
 # Define the scatterplot layer
 scatter_layer = pdk.Layer(
     'ScatterplotLayer',
     data=destinations_info,
     radius_scale=20,
-    get_position="coordinates",
+    get_position=['lon', 'lat'],
     get_fill_color=[255, 140, 0],
     get_radius=30,
     pickable=True,
@@ -97,11 +128,15 @@ scatter_layer = pdk.Layer(
 # Define lines data for directions
 geolocator = Nominatim(user_agent="travel_app")
 starting_city = geolocator.geocode(starting_point)
-starting_point_coordinates = [starting_city.longitude, starting_city.latitude]
+if starting_city:
+    starting_point_coordinates = [starting_city.longitude, starting_city.latitude]
+    INITIAL_VIEW_STATE.latitude = starting_city.latitude
+    INITIAL_VIEW_STATE.longitude = starting_city.longitude
+    
 
 lines_data = [{
     'start': starting_point_coordinates,
-    'end': dest['coordinates']
+    'end': [dest['lon'], dest['lat']]
 } for dest in destinations_info]
 
 # Define the line layer
