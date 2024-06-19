@@ -6,8 +6,8 @@ import json
 from openai import OpenAI
 from dotenv import load_dotenv
 from geopy.geocoders import Nominatim
+import datetime
 
-# Setting the page config to wide mode
 st.set_page_config(layout='wide')
 
 st.title('Travel Time Web Application')
@@ -37,7 +37,7 @@ def get_completion(prompt, model='gpt-3.5-turbo'):
 def fetch_destinations(start_point, travel_time, child_age):
     prompt = f"""
     Your task is to generate a list of family-friendly destinations (towns and cities)\
-    and things to do within {travel_time} minutes of travel by public transport\
+    and things to do within {travel_time} (in hours) of travel by public transport\
     from {start_point}. And they are recommended for a family trip with\ 
     {child_age} years old child or children.
 
@@ -49,13 +49,15 @@ def fetch_destinations(start_point, travel_time, child_age):
                 "name": "Destination 1",
                 "longitude": longitude , 
                 "latitude": latitude,
-                "things_to_do": "Activity 1, Activity 2, Activity 3"
+                "things_to_do": ["Activity 1, Activity 2, Activity 3"],
+                "travel_time": "travel_time"
             }},
             {{
                 "name": "Destination 2",
                 "longitude": longitude , 
                 "latitude": latitude,
-                "things_to_do": "Activity 1, Activity 2, Activity 3"
+                "things_to_do": ["Activity 1, Activity 2, Activity 3"],
+                "travel_time": "travel_time"
             }},
             ...
         ]
@@ -74,7 +76,8 @@ def fetch_destinations(start_point, travel_time, child_age):
             'name' : dest['name'],
             'lon': dest['longitude'],
             'lat': dest['latitude'],
-            'things_to_do': dest['things_to_do']
+            'things_to_do': dest['things_to_do'],
+            'travel_time': dest['travel_time']
         } for dest in destinations_data['destinations']]
         print(destination_info)
         return destination_info
@@ -85,8 +88,14 @@ def fetch_destinations(start_point, travel_time, child_age):
 # Set up the sidebar for user inputs
 st.sidebar.header('Travel Time Settings')
 starting_point = st.sidebar.text_input('Enter starting point', 'Amsterdam')
-travel_time = st.sidebar.slider('Select travel time (minutes)', min_value=5, max_value=120, value=30)
-child_age = st.sidebar.slider('Select child\'s age', min_value=1, max_value=18, value=5)
+
+time_selection = ['0.5h', '1h', '1.5h', '2h', '2.5h', '3h'] # in hours
+travel_time = st.sidebar.selectbox("Travel time (in hours):", time_selection)
+#travel_time = st.sidebar.radio("Choose travel time (in hours):", time_selection)
+
+# Child's age selection
+age_options = list(range(0,19)) # ages from 0 to 18
+child_age = st.sidebar.selectbox("Child's age:", age_options)
 
 # # Sample destinations_info data
 # destinations_info = [
@@ -99,11 +108,40 @@ destinations_info = fetch_destinations(starting_point, travel_time, child_age)
 
 # Display destinations in the sidebar 
 st.subheader(f"""
-             Destinations and Things to Do within {travel_time} minutes\
+             Destinations and Things to Do within {travel_time} \
              from {starting_point} for a {child_age} year old:
              """)
 for destination in destinations_info:
     st.write(f"**{destination['name']}**: {destination['things_to_do']}")
+
+# Custom CSS to create card-like boxes in the sidebar
+st.sidebar.markdown("""
+<style>
+.card {
+    margin: 10px 0px;  # top and bottom margin
+    padding: 15px;
+    border: 1px solid #ccc;  # Light grey border
+    border-radius: 10px;  # Rounded corners
+    box-shadow: 2px 2px 5px 2px rgba(0,0,0,0.1);  # Subtle shadow
+    background-color: #f9f9f9;  # Light grey background
+}
+ul {
+    padding-left: 20px;  # Proper padding for bullet points
+}
+li {
+    margin-bottom: 5px;  # Space between items
+}
+</style>
+""", unsafe_allow_html=True)
+
+# Display each destination in a card in the sidebar
+for destination in destinations_info:
+    with st.sidebar.container():
+        card(
+            title = destination['name'],
+            text = destination['things_to_do']
+        )
+
 
 # Setting up the map
 INITIAL_VIEW_STATE = pdk.ViewState(
