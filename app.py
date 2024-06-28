@@ -1,16 +1,23 @@
 import streamlit as st
 import pydeck as pdk
-import requests
-import os
 import json
 from openai import OpenAI
 from dotenv import load_dotenv
 from geopy.geocoders import Nominatim
-import datetime
+
 
 st.set_page_config(layout='wide')
-
-st.title('Travel Time Web Application')
+# Inject custom CSS to set the width of the sidebar
+st.markdown(
+    """
+    <style>
+        section[data-testid="stSidebar"] {
+            flex: 0 0 50% !important;
+        }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 
 # Load environment variables from .env file
 load_dotenv()
@@ -27,11 +34,6 @@ def get_completion(prompt, model='gpt-3.5-turbo'):
             temperature=0,
         )
     return response.choices[0].message.content
-    # Format your response as a JSON object with "name", "things_to_do", \
-    # and "coordinates" as the keys.\
-    # If the information isn't present, use "unknown" as the value.
-    # Format the coordinates value as an array of longtitude and latitude.
-    # Format the things_to_do value as an array.
 
 # Fuction to fetch reachable destinations 
 def fetch_destinations(start_point, travel_time, child_age):
@@ -91,56 +93,62 @@ starting_point = st.sidebar.text_input('Enter starting point', 'Amsterdam')
 
 time_selection = ['0.5h', '1h', '1.5h', '2h', '2.5h', '3h'] # in hours
 travel_time = st.sidebar.selectbox("Travel time (in hours):", time_selection)
-#travel_time = st.sidebar.radio("Choose travel time (in hours):", time_selection)
 
 # Child's age selection
 age_options = list(range(0,19)) # ages from 0 to 18
 child_age = st.sidebar.selectbox("Child's age:", age_options)
 
-# # Sample destinations_info data
-# destinations_info = [
-#     {'name': 'Haarlem', 'coordinates': [52.3874, 4.6375]},
-#     {'name': 'Rotterdam', 'coordinates': [51.9225, 4.4792]}
-# ]
+st.title(f"Where can I go from {starting_point} within {travel_time} with {child_age}-year-old?")
 
 # API call to get destinations
 destinations_info = fetch_destinations(starting_point, travel_time, child_age)
 
 # Display destinations in the sidebar 
-st.subheader(f"""
-             Destinations and Things to Do within {travel_time} \
-             from {starting_point} for a {child_age} year old:
-             """)
-for destination in destinations_info:
-    st.write(f"**{destination['name']}**: {destination['things_to_do']}")
+st.sidebar.subheader(f"Recommendations")
 
-# Custom CSS to create card-like boxes in the sidebar
-st.sidebar.markdown("""
-<style>
-.card {
-    margin: 10px 0px;  # top and bottom margin
-    padding: 15px;
-    border: 1px solid #ccc;  # Light grey border
-    border-radius: 10px;  # Rounded corners
-    box-shadow: 2px 2px 5px 2px rgba(0,0,0,0.1);  # Subtle shadow
-    background-color: #f9f9f9;  # Light grey background
-}
-ul {
-    padding-left: 20px;  # Proper padding for bullet points
-}
-li {
-    margin-bottom: 5px;  # Space between items
-}
+# Iterate over each destination to format the output
+for destination in destinations_info:
+    # Use markdown to create card-like styling for each destination
+    st.sidebar.markdown(f"""
+    <div class="card">
+        <h3>{destination['name']}</h3>
+        <p><strong>Travel Time:</strong> {destination['travel_time']}</p>
+        <p><strong>Activities:</strong></p>
+        <ul>
+            {''.join(f"<li>{activity}</li>" for activity in destination['things_to_do'])}
+        </ul>
+    </div>
+    """, unsafe_allow_html=True)
+
+# Insert CSS styles to enhance the card-like appearance
+st.sidebar.markdown(
+    """
+    <style>
+    .card {
+        background-color: #ffffff !important; 
+        margin: 10px 0px;
+        box-shadow: none;  
+        border-radius: 5px; 
+        }
+    h3 {
+        padding: 0.5rem 0.5rem 0.5rem !important;
+        font-size: 16px; 
+        color: #333; 
+    }
+    p {
+        margin: 0;  
+        padding: 0.5rem 0.5rem 0.5rem !important;
+        color: #666;  
+    }
+    ul {
+        padding-left: 20px;  
+    }
+    li {
+        margin-bottom: 2px; 
+    }
+
 </style>
 """, unsafe_allow_html=True)
-
-# Display each destination in a card in the sidebar
-for destination in destinations_info:
-    with st.sidebar.container():
-        card(
-            title = destination['name'],
-            text = destination['things_to_do']
-        )
 
 
 # Setting up the map
@@ -150,7 +158,6 @@ INITIAL_VIEW_STATE = pdk.ViewState(
     zoom=8,
     pitch=50
 )
-
 
 # Define the scatterplot layer
 scatter_layer = pdk.Layer(
@@ -185,10 +192,6 @@ line_layer = pdk.Layer(
     get_target_position='end',
     get_color=[253, 128, 93],
     get_width=5,
-    # highlight_color=[255, 255, 0],
-    # picking_radius=10,
-    # auto_highlight=True,
-    # pickable=True,
 )
 
 # Render the map
