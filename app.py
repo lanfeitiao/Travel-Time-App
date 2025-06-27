@@ -1,6 +1,7 @@
 import streamlit as st
 import pydeck as pdk
 import json
+import os
 from openai import OpenAI
 from dotenv import load_dotenv
 from geopy.geocoders import Nominatim
@@ -22,8 +23,11 @@ st.markdown(
 # Load environment variables from .env file
 load_dotenv()
 
+# Get API keys from environment variables
+openai_api_key = os.getenv('OPENAI_API_KEY')
+
 # Helper function to get generated outputs from OpenAI model 
-client = OpenAI()
+client = OpenAI(api_key=openai_api_key)
 
 def get_completion(prompt, model='gpt-3.5-turbo'):
     messages = [{ "role": "user", "content": prompt }]
@@ -35,12 +39,12 @@ def get_completion(prompt, model='gpt-3.5-turbo'):
         )
     return response.choices[0].message.content
 
-# Fuction to fetch reachable destinations 
+# Function to fetch reachable destinations 
 def fetch_destinations(start_point, travel_time, child_age):
     prompt = f"""
-    Your task is to generate a list of family-friendly destinations (towns and cities)\
-    and things to do within {travel_time} (in hours) of travel by public transport\
-    from {start_point}. And they are recommended for a family trip with\ 
+    Your task is to generate a list of family-friendly destinations (towns and cities) 
+    and things to do within {travel_time} (in hours) of travel by public transport 
+    from {start_point}. And they are recommended for a family trip with 
     {child_age} years old child or children.
 
     Output format as follows: 
@@ -191,12 +195,14 @@ line_layer = pdk.Layer(
     get_source_position='start',
     get_target_position='end',
     get_color=[253, 128, 93],
-    get_width=5,
+    get_width=2,
 )
 
 # Render the map
-st.pydeck_chart(pdk.Deck(
-    map_style='mapbox://styles/mapbox/light-v9',
+deck = pdk.Deck(
+    map_style=None,  # Automatically adapts to Streamlit's theme
     initial_view_state=INITIAL_VIEW_STATE,
     layers=[scatter_layer, line_layer]
-))
+)
+
+st.pydeck_chart(deck)
