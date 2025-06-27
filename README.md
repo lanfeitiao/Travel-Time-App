@@ -28,14 +28,14 @@ Try the app here: **[https://travel-time.streamlit.app/](https://travel-time.str
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/Travel-Time-App.git
+   git clone https://github.com/lanfeitiao/Travel-Time-App.git
    cd Travel-Time-App
    ```
 
 2. **Create a virtual environment** (recommended)
    ```bash
    python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   source venv/bin/activate 
    ```
 
 3. **Install dependencies**
