@@ -2,22 +2,55 @@
 
 A Streamlit app that recommends family-friendly destinations reachable by public transport within a selected time from your starting point.
 
-## Features
+## 🚀 Live Demo
 
-- Generates destination suggestions using OpenAI's language model.
-- Displays travel times and suggested activities for each location.
-- Visualizes routes and destinations on an interactive map with PyDeck.
+Try the app here: **[https://travel-time.streamlit.app/](https://travel-time.streamlit.app/)**
 
-## Setup
+## 📸 Screenshot
 
-1. Create a virtual environment (optional).
-2. Install dependencies:
+![Travel Time App Screenshot](screenshot.png)
+*Interactive map showing family-friendly destinations and travel routes*
+
+## ✨ Features
+
+- 🗺️ **Interactive Map**: Visualizes destinations and travel routes using PyDeck
+- 🤖 **AI-Powered Recommendations**: Uses OpenAI's language model to suggest family-friendly destinations
+- ⏰ **Customizable Travel Time**: Choose from 30 minutes to 3 hours of travel time
+- 👶 **Age-Appropriate Activities**: Tailored suggestions based on your child's age
+
+## 🛠️ Setup
+
+### Prerequisites
+- Python 3.8 or higher
+- OpenAI API key
+
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/yourusername/Travel-Time-App.git
+   cd Travel-Time-App
+   ```
+
+2. **Create a virtual environment** (recommended)
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
+
+3. **Install dependencies**
    ```bash
    pip install -r requirements.txt
    ```
-3. Provide your OpenAI API key as an environment variable named `OPENAI_API_KEY` (for example in a `.env` file).
 
-## Running the App
+4. **Set up environment variables**
+   
+   Create a `.env` file in the project root:
+   ```bash
+   OPENAI_API_KEY=your_openai_api_key_here
+   ```
+
+## 🚀 Running the App
 
 Run the Streamlit application with:
 
@@ -25,7 +58,20 @@ Run the Streamlit application with:
 streamlit run app.py
 ```
 
-A browser window will open where you can enter your starting city, travel time, and the age of your child to receive destination suggestions.
+The app will open in your browser at `http://localhost:8501`
+
+## 🎯 How to Use
+
+1. **Enter your starting point** (e.g., "Amsterdam", "London", "New York")
+2. **Select travel time** (30 minutes to 3 hours)
+3. **Choose your child's age** (0-18 years)
+4. **Explore recommendations** in the sidebar and view destinations on the interactive map
+
+## 🏗️ Built With
+
+- **[Streamlit](https://streamlit.io/)** - Web framework
+- **[PyDeck](https://pydeck.gl/)** - Interactive map visualization
+- **[OpenAI API](https://openai.com/)** - AI-powered destination recommendations
 
 ## License
 
